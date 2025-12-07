@@ -5,6 +5,7 @@ n_iter = 50;
 options = optimoptions('quadprog','Display','off');
 
 
+
 %% Example 1: Example 4.1 (2D inequalities)
 P2 = [4 1; 1 2];
 q2 = [-12; -10];
@@ -32,8 +33,8 @@ time_ex2 = toc;
 fprintf('--- Example 1 (Example 4.1) ---\n');
 disp('quadprog x:'); disp(x_qp2'); fprintf('quadprog f: %g\n', f_qp2);
 disp('ExOpt global x:'); disp(xg2'); fprintf('ExOpt f: %g\n', fg2);
-%disp('Terminal optima (columns):'); disp(X2);
-%disp('Terminal objectives:'); disp(F2);
+disp('Terminal optima (columns):'); disp(X2);
+disp('Terminal objectives:'); disp(F2);
 fprintf('Time quadprog: %g s, ExOpt: %g s\n\n', time_qp2, time_ex2);
 
 
@@ -61,12 +62,12 @@ for i=1:n_iter
 end
 time_ex3 = toc;
 
-fprintf('--- Example 2 (Example 4.3) ---\n');
+fprintf('--- Example 2 (Extended Example 4.3) ---\n');
 disp('quadprog x:'); disp(x_qp3'); fprintf('quadprog f: %g\n', f_qp3);
 disp('ExOpt global x:'); disp(xg3'); fprintf('ExOpt f: %g\n', fg3);
-%disp('Terminal optima (columns):'); disp(X3);
-%disp('Terminal objectives:'); disp(F3);
-%disp('Active sets:'); disp(I3);
+disp('Terminal optima (columns):'); disp(X3);
+disp('Terminal objectives:'); disp(F3);
+disp('Active sets:'); disp(I3);
 fprintf('Time quadprog: %g s, ExOpt: %g s\n\n', time_qp3, time_ex3);
 
 %% Example A: Original 3-variable equality QP
@@ -92,10 +93,10 @@ for i=1:n_iter
 end
 time_ex1 = toc;
 
-fprintf('--- Example 4 (Example 4.5) ---\n');
+fprintf('--- Example 4 (3-var equality) ---\n');
 disp('quadprog x:'); disp(x_qp1'); fprintf('quadprog f: %g\n', f_qp1);
 disp('ExOpt global x:'); disp(xg1'); fprintf('ExOpt f: %g\n', fg1);
-%disp('Terminal optima (columns):'); disp(X1);
-%disp('Terminal objectives:'); disp(F1);
+disp('Terminal optima (columns):'); disp(X1);
+disp('Terminal objectives:'); disp(F1);
 fprintf('Time quadprog: %g s, ExOpt: %g s\n\n', time_qp1, time_ex1);
 
