@@ -11,7 +11,6 @@ q2 = [-12; -10];
 s2 = 0;
 Aeq2 = [];
 beq2 = [];
-% embed 2D constraints in 3rd dimension? No — this is 2D problem
 C2 = [1 1; -1 0; 0 -1];
 d2 = [4; 0; 0];
 
@@ -43,11 +42,10 @@ q3 = [0;0;0];
 s3 = 0;
 Aeq3 = [0 0 1];
 beq3 = 2;  % pick b=2 as example
-% other parameters follow Example 4.1 but embedded in first two components:
 C3 = [1 1 0; -1 0 0; 0 -1 0];  % c1=(1,1,0), c2=(-1,0,0), c3=(0,-1,0)
 d3 = [4;0;0];
 
-% quadprog (we expect any minimizer like [0,t,2] to yield same objective 0)
+% quadprog 
 tic;
 for i=1:n_iter
     [x_qp3,f_qp3] = quadprog(P3,q3,C3,d3,Aeq3,beq3,[],[],[],options);
@@ -63,7 +61,7 @@ time_ex3 = toc;
 
 fprintf('--- Example 2 (Example 4.3) ---\n');
 disp('quadprog x:'); disp(x_qp3'); fprintf('quadprog f: %g\n', f_qp3);
-disp('ExOpt global x:'); disp(xg3'); fprintf('ExOpt f: %g\n', fg3);
+disp('ExOpt global x:'); disp(xg3'); disp('Result may be different from quadprog do to the number of different solutions, they are still both true'); fprintf('ExOpt f: %g\n', fg3);
 %disp('Terminal optima (columns):'); disp(X3);
 %disp('Terminal objectives:'); disp(F3);
 %disp('Active sets:'); disp(I3);

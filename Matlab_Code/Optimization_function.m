@@ -1,99 +1,127 @@
-function [x_global,f_global,X_term,F_term,I_term] = Optimization_function(P,q,s,Aeq,beq,Aineq,bineq)
-% OPTIMIZATION_FUNCTION Exact Quadratic Optimization (Algorithm 3.1 Lin 2023)
-% Solves: min 1/2 x'Px + q'x + s  s.t. Aeq x = beq, Aineq x <= bineq
+function [x_global,f_global,X_term,F_term,I_term] = ExOpt_Algorithm3_1(P,q,s,Aeq,beq,Aineq,bineq)
+
+% ==============================================================
+% Exact Optimization using Algorithm 3.1 (Lin 2023)
+% Full Output Version (compact + stable)
 %
-% Robustness: Uses pseudoinverse for singular Hessians (semi-definite P).
-% Stability : Standardized tolerances for rank and KKT checks.
+% Inputs:
+%   P,q,s        Quadratic cost  (1/2 x'Px + q'x + s)
+%   Aeq, beq     Equality constraints Aeq x = beq
+%   Aineq,bineq  Inequality constraints Aineq x <= bineq
+%
+% Outputs:
+%   x_global     Best (minimum-cost) optimal solution
+%   f_global     Corresponding objective value
+%   X_term       All terminal optimal points (one per active set)
+%   F_term       Their objective values
+%   I_term       Active-set indices for each terminal solution
+% ==============================================================
 
-    %% 1. Initialization and Constants
-    TOL_RANK = 1e-12; % Tolerance for Null-space detection
-    TOL_KKT  = 1e-10; % Tolerance for KKT stationarity
-    TOL_FEAS = 1e-8;  % Tolerance for inequality feasibility
+%% Preprocessing
+n = length(q);
+neq = size(Aeq,1);
+nine = size(Aineq,1);
 
-    % Ensure consistent shapes
-    q = q(:); 
-    if isempty(beq), beq = zeros(0,1); end
-    if isempty(bineq), bineq = zeros(0,1); end
+if isempty(Aineq)
+    nine = 0;
+end
+
+X_term = [];
+F_term = [];
+I_term = {};
+
+%% Case 1 — Equality-only (no inequalities)
+if nine == 0
+    % Projection-based solution
+    A = Aeq; b = beq;
+    Ap = pinv(A);
     
-    nine = size(Aineq, 1);
-    X_term = []; F_term = []; I_term = {};
+    % Nullspace basis
+    [~,~,V] = svd(A);
+    nullMask = sum(abs(A*V) < 1e-12,1)==neq;
+    V2 = V(:,nullMask);
 
-    %% 2. Active Set Enumeration
-    % Iterate k from 0 (no inequality active) to nine (all active)
-    for k = 0:nine
+    % Reduced KKT (Theorem 3.2)
+    M1 = V2' * P * V2;
+    M2 = V2' * (q + P*Ap*b);
+
+    if norm(M1) > 1e-10
+        y = -pinv(M1) * M2;
+        x = Ap*b + V2*y;
+    else
+        % constant solution set
+        x = Ap*b;
+    end
+
+    f = 0.5*x'*P*x + q'*x + s;
+
+    % Outputs
+    x_global = x;
+    f_global = f;
+    X_term = x;
+    F_term = f;
+    I_term = {[]};
+    return;
+end
+
+%% Case 2 — Inequalities present
+% We enumerate all active sets (subset of inequalities)
+for k = 0:nine
+    combs = nchoosek(1:nine,k);
+
+    for r = 1:size(combs,1)
+
+        active = combs(r,:);
         
-        % Generate combinations of active inequalities
-        if k == 0, combs = zeros(1,0); else, combs = nchoosek(1:nine, k); end
+        % Build combined equality system
+        A = [Aeq; Aineq(active,:)]; 
+        b = [beq; bineq(active)];
 
-        for r = 1:size(combs, 1)
-            active_idx = combs(r, :);
-            
-            % 2.1 Build current Equality System (Original Eq + Active Ineq)
-            if isempty(active_idx)
-                A = Aeq; b = beq;
-            else
-                A = [Aeq; Aineq(active_idx, :)];
-                b = [beq; bineq(active_idx)];
-            end
-            
-            % 2.2 Solve Equality-Constrained Sub-Problem
-            % System: [P A'; A 0] * [x; lambda] = [-q; b]
-            % We use the Null-Space method for numerical stability.
-            
-            Ap = pinv(A); 
-            [~, ~, V] = svd(A);
-            
-            % Feasibility Check: Does Ax=b have ANY solution?
-            % If rank(A) < rank([A b]), it's inconsistent.
-            if ~isempty(A) && rank(A) < rank([A, b])
-                continue; 
-            end
-            
-            % Identify Null Space Basis (directions where A*x = 0)
-            if isempty(A)
-                V2 = eye(length(q)); % No constraints, full space is null space
-                x_part = zeros(length(q),1);
-            else
-                nullMask = sum(abs(A*V) < TOL_RANK, 1) == size(A,1);
-                V2 = V(:, nullMask);
-                x_part = Ap*b; % Particular solution
-            end
-
-            % Project P and q onto the null space
-            M1 = V2' * P * V2;            % Projected Hessian
-            M2 = V2' * (q + P * x_part);  % Projected Gradient
-
-            % Solve Reduced KKT: M1 * y = -M2
-            if norm(M1) > TOL_KKT
-                % Standard case: Curvature exists, unique minimum in null space
-                y = -pinv(M1) * M2;
-                x = x_part + V2*y;
-            else
-                % Singular case (Flat valley):
-                % Solution exists only if gradient is zero along flat directions
-                if norm(M2) > TOL_KKT
-                    continue; % Unbounded or no stationary point
-                end
-                x = x_part; % Pick minimum norm particular solution
-            end
-
-            % 2.3 Check Inactive Inequalities
-            % The solution must satisfy ALL inequalities, not just active ones
-            if isempty(Aineq) || all(Aineq*x - bineq <= TOL_FEAS)
-                fval = 0.5*x'*P*x + q'*x + s;
-                
-                % Store result
-                X_term = [X_term, x];     %#ok<*AGROW>
-                F_term = [F_term, fval];
-                I_term{end+1} = active_idx;
-            end
+        % Check if feasible (rank consistency)
+        if rank(A) < rank([A b])
+            continue;  % no solution to this active set
         end
-    end
+        
+        % Build particular solution + nullspace
+        Ap = pinv(A);
+        [~,~,V] = svd(A);
+        nullMask = sum(abs(A*V) < 1e-12,1)==size(A,1);
+        V2 = V(:,nullMask);
 
-    %% 3. Final Selection
-    if isempty(F_term)
-        error('Optimization_function:NoFeasiblePoint', 'No feasible solution found.');
+        % Reduced matrices
+        M1 = V2'*P*V2;
+        M2 = V2'*(q + P*Ap*b);
+
+        if norm(M1) > 1e-10
+            y = -pinv(M1)*M2;
+            x = Ap*b + V2*y;
+        else
+            % Only feasible if M2 == 0
+            if norm(M2) > 1e-10
+                continue;
+            end
+            x = Ap*b;
+        end
+
+        % Check inactive inequalities
+        if any(Aineq*x - bineq > 1e-8)
+            continue; 
+        end
+
+        % Save terminal solution
+        fval = 0.5*x'*P*x + q'*x + s;
+        X_term = [X_term x];
+        F_term = [F_term fval];
+        I_term{end+1} = active;
     end
-    [f_global, idx] = min(F_term);
-    x_global = X_term(:, idx);
+end
+
+%% Final selection of global minimum
+if isempty(F_term)
+    error('No feasible terminal points found.');
+end
+
+[f_global, idx] = min(F_term);
+x_global = X_term(:,idx);
+
 end
