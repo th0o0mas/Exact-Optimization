@@ -36,7 +36,7 @@ disp('ExOpt global x:'); disp(xg2'); fprintf('ExOpt f: %g\n', fg2);
 fprintf('Time quadprog: %g s, ExOpt: %g s\n\n', time_qp2, time_ex2);
 
 
-%% Example 2: Extended Example 4.3 (3D singular P)
+%% Example 2:Example 4.3 (3D singular P)
 P3 = diag([1 0 0]);
 q3 = [0;0;0];
 s3 = 0;
@@ -67,7 +67,7 @@ disp('ExOpt global x:'); disp(xg3'); disp('Result may be different from quadprog
 %disp('Active sets:'); disp(I3);
 fprintf('Time quadprog: %g s, ExOpt: %g s\n\n', time_qp3, time_ex3);
 
-%% Example A: Original 3-variable equality QP
+%% Example 3: Example 4.5 3-variable equality QP
 P1 = [1 -1 1; -1 2 -2; 1 -2 4];
 q1 = [-7; -12; -15];
 s1 = 0;
