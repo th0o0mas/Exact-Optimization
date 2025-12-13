@@ -61,7 +61,7 @@ time_ex3 = toc;
 
 fprintf('--- Example 2 (Example 4.3) ---\n');
 disp('quadprog x:'); disp(x_qp3'); fprintf('quadprog f: %g\n', f_qp3);
-disp('ExOpt global x:'); disp(xg3'); disp('Result may be different from quadprog do to the number of different solutions, they are still both true'); fprintf('ExOpt f: %g\n', fg3);
+disp('ExOpt global x:'); disp(xg3'); disp('Result may be different from quadprog due to the number of different solutions being different than 1, they are still both true'); fprintf('ExOpt f: %g\n', fg3);
 %disp('Terminal optima (columns):'); disp(X3);
 %disp('Terminal objectives:'); disp(F3);
 %disp('Active sets:'); disp(I3);
